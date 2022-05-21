@@ -179,4 +179,33 @@ describe("Order repository test", () => {
       await orderRepository.update(order);
     }).rejects.toThrow("Order with id 123 not found");
   });
+
+  it("should find order by id", async () => {
+    const customerRepository = new CustomerRepository();
+    const customer = new Customer("123", "Customer 1");
+    const address = new Address("Street 1", 1, "Zipcode 1", "City 1");
+    customer.changeAddress(address);
+    await customerRepository.create(customer);
+
+    const productRepository = new ProductRepository();
+    const product = new Product("123", "Product 1", 10);
+    await productRepository.create(product);
+
+    const ordemItem = new OrderItem(
+      "1",
+      product.name,
+      product.price,
+      product.id,
+      2
+    );
+
+    const order = new Order("123", "123", [ordemItem]);
+
+    const orderRepository = new OrderRepository();
+    await orderRepository.create(order);
+
+    const orderReturned = await orderRepository.find("123");
+
+    expect(orderReturned).toStrictEqual(order);
+  });
 });

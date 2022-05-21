@@ -81,4 +81,102 @@ describe("Order repository test", () => {
       ],
     });
   });
+
+  it("should update a order", async () => {
+    const customerRepository = new CustomerRepository();
+    const customer = new Customer("123", "Customer 1");
+    const address = new Address("Street 1", 1, "Zipcode 1", "City 1");
+    customer.changeAddress(address);
+    await customerRepository.create(customer);
+
+    const productRepository = new ProductRepository();
+    const product = new Product("123", "Product 1", 10);
+    await productRepository.create(product);
+
+    const ordemItem1 = new OrderItem(
+      "1",
+      product.name,
+      product.price,
+      product.id,
+      1
+    );
+
+    const ordemItem2 = new OrderItem(
+      "2",
+      product.name,
+      product.price,
+      product.id,
+      1
+    );
+
+    const order = new Order("123", "123", [ordemItem1, ordemItem2]);
+
+    const orderRepository = new OrderRepository();
+    await orderRepository.create(order);
+
+    const ordemItem3 = new OrderItem(
+      "3",
+      product.name,
+      product.price,
+      product.id,
+      1
+    );
+
+    order.updateItems([ordemItem1, ordemItem3]);
+    await orderRepository.update(order);
+
+    const orderModel = await OrderModel.findOne({
+      where: { id: order.id },
+      include: ["items"],
+    });
+
+    expect(orderModel.toJSON()).toStrictEqual({
+      id: "123",
+      customer_id: "123",
+      total: order.total(),
+      items: [
+        {
+          id: ordemItem1.id,
+          name: ordemItem1.name,
+          price: ordemItem1.price,
+          quantity: ordemItem1.quantity,
+          order_id: "123",
+          product_id: "123",
+        },
+        {
+          id: ordemItem3.id,
+          name: ordemItem3.name,
+          price: ordemItem3.price,
+          quantity: ordemItem3.quantity,
+          order_id: "123",
+          product_id: "123",
+        },
+      ],
+    });
+  });
+
+  it("should throw an error when order is not found when updated", async () => {
+    const customer = new Customer("123", "Customer 1");
+    const address = new Address("Street 1", 1, "Zipcode 1", "City 1");
+    customer.changeAddress(address);
+
+    const product = new Product("123", "Product 1", 10);
+
+    const ordemItem1 = new OrderItem(
+      "1",
+      product.name,
+      product.price,
+      product.id,
+      1
+    );
+
+    const order = new Order("123", "123", [ordemItem1]);
+
+    const orderRepository = new OrderRepository();
+
+    order.updateItems([ordemItem1]);
+    expect(async () => {
+      await orderRepository.update(order);
+    }).rejects.toThrow("Order with id 123 not found");
+  });
 });

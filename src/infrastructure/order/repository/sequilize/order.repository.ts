@@ -81,20 +81,30 @@ export default class OrderRepository implements OrderRepositoryInterface {
   }
 
   async find(id: string): Promise<Order> {
-    let orderModel: OrderModel;
-
     try {
-      orderModel = await OrderModel.findOne({
+      let orderModel = await OrderModel.findOne({
         where: {
           id,
         },
         include: ["items"],
         rejectOnEmpty: true,
       });
+
+      return this.parseToOrder(orderModel);
     } catch (error) {
       throw new Error(`Order with id ${id} not found`);
     }
+  }
 
+  async findAll(): Promise<Order[]> {
+    let orderList = (await OrderModel.findAll({ include: ["items"] })).map(
+      (orderModel) => this.parseToOrder(orderModel)
+    );
+
+    return orderList;
+  }
+
+  private parseToOrder(orderModel: OrderModel): Order {
     return new Order(
       orderModel.id,
       orderModel.customer_id,
@@ -108,9 +118,5 @@ export default class OrderRepository implements OrderRepositoryInterface {
         );
       })
     );
-  }
-
-  findAll(): Promise<Order[]> {
-    throw new Error("Method not implemented.");
   }
 }
